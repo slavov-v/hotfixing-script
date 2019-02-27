@@ -21,7 +21,7 @@ then
     exit 1
 fi
 
-# if [ "$current_branch" = "$MASTER_BRANCH_NAME" ] && [ "$current_branch" = "$PRODUCTION_BRANCH_NAME" ]
+# if [ "$current_branch" = "$MASTER_BRANCH_NAME" ] || [ "$current_branch" = "$PRODUCTION_BRANCH_NAME" ]
 # then
 #     echo "Branch must not be $MASTER_BRANCH_NAME or $PRODUCTION_BRANCH_NAME"
 #
@@ -80,12 +80,12 @@ fi
 
 if [ "$m_new_branch_exists" = true ]
 then
-    `git branch -D $master_new_branch_name`
+    git branch -D $master_new_branch_name
 fi
 
 if [ "$p_new_branch_exists" = true ]
 then
-    `git branch -D $production_new_branch_name`
+    git branch -D $production_new_branch_name
 fi
 
 if [ "$parent" = "$MASTER_BRANCH_NAME" ]
@@ -112,12 +112,14 @@ echo "Enter a title (will be modified with hotfix prefixes): "
 read pr_title
 
 git checkout $first_base --quiet
-exit_on_err $? "attempting to checkout to $first_base"
+exit_on_err $? "checking out to to $first_base"
 git checkout -b $first_branch --quiet
-exit_on_err $? "attempting to checkout to $first_branch"
+exit_on_err $? "checking out to $first_branch"
 git cherry-pick $parent_commit..$last_commit
-exit_on_err $? "attempting cherry-pick commits"
-# echo "Pushing to origin"
-# `git push origin $first_branch`
-# echo "Creating PR to $first_base"
-# `hub pull-request -b $first_base -m \"[HOTFIX: \`$first_title\`] $pr_title\"`
+exit_on_err $? "cherry-picking commits"
+echo "Pushing to origin"
+git push origin $first_branch
+exit_on_err $? "pushig to origin $first_branch"
+echo "Creating PR to $first_base"
+hub pull-request -b $first_base -m "[HOTFIX: \`$first_title\`] $pr_title"
+exit_on_err $? "Creating a pull request towards $first_base"
