@@ -138,8 +138,5 @@ echo "Cleaning up"
 git checkout $current_branch --quiet
 git branch -D $first_branch --quiet
 git branch -D $second_branch --quiet
-git branch -D $first_base --quiet
-git branch -D $second_base --quiet
-git fetch origin
 
 echo "Done"
