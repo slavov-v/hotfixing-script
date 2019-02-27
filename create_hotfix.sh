@@ -21,20 +21,20 @@ then
     exit 1
 fi
 
-# if [ "$current_branch" = "$MASTER_BRANCH_NAME" ] || [ "$current_branch" = "$PRODUCTION_BRANCH_NAME" ]
-# then
-#     echo "Branch must not be $MASTER_BRANCH_NAME or $PRODUCTION_BRANCH_NAME"
-#
-#     exit 1
-# fi
+if [ "$current_branch" = "$MASTER_BRANCH_NAME" ] || [ "$current_branch" = "$PRODUCTION_BRANCH_NAME" ]
+then
+    echo "Branch must not be $MASTER_BRANCH_NAME or $PRODUCTION_BRANCH_NAME"
+
+    exit 1
+fi
 
 
-# if [ "$parent" != "$MASTER_BRANCH_NAME" ] && [ "$parent" != "$PRODUCTION_BRANCH_NAME" ]
-# then
-#     echo "Parent branch must be $MASTER_BRANCH_NAME or $PRODUCTION_BRANCH_NAME"
+if [ "$parent" != "$MASTER_BRANCH_NAME" ] && [ "$parent" != "$PRODUCTION_BRANCH_NAME" ]
+then
+    echo "Parent branch must be $MASTER_BRANCH_NAME or $PRODUCTION_BRANCH_NAME"
 
-#     exit 1
-# fi
+    exit 1
+fi
 
 master_new_branch_name="hotfix/m/$current_branch"
 production_new_branch_name="hotfix/p/$current_branch"
@@ -111,15 +111,35 @@ last_commit=`git rev-parse HEAD`
 echo "Enter a title (will be modified with hotfix prefixes): "
 read pr_title
 
-git checkout $first_base --quiet
-exit_on_err $? "checking out to to $first_base"
-git checkout -b $first_branch --quiet
-exit_on_err $? "checking out to $first_branch"
-git cherry-pick $parent_commit..$last_commit
-exit_on_err $? "cherry-picking commits"
-echo "Pushing to origin"
-git push origin $first_branch
-exit_on_err $? "pushig to origin $first_branch"
-echo "Creating PR to $first_base"
-hub pull-request -b $first_base -m "[HOTFIX: \`$first_title\`] $pr_title"
-exit_on_err $? "Creating a pull request towards $first_base"
+create_pr () {
+    base=$1
+    branch=$2
+    base_title=$3
+
+    git checkout $base --quiet
+    exit_on_err $? "checking out to to $base"
+    git checkout -b $branch --quiet
+    exit_on_err $? "checking out to $branch"
+    git cherry-pick $parent_commit..$last_commit
+    exit_on_err $? "cherry-picking commits"
+    echo "Pushing to origin"
+    git push origin $branch --quiet
+    exit_on_err $? "pushing to origin $branch"
+    echo "Creating PR to $base"
+    hub pull-request -b $base -m "[HOTFIX: \`$base_title\`] $pr_title"
+    exit_on_err $? "Creating a pull request towards $base"
+}
+
+create_pr $first_base $first_branch $first_title
+create_pr $second_base $second_branch $second_title
+
+echo "Cleaning up"
+
+git checkout $current_branch --quiet
+git branch -D $first_branch --quiet
+git branch -D $second_branch --quiet
+git branch -D $first_base --quiet
+git branch -D $second_base --quiet
+git fetch origin
+
+echo "Done"
